@@ -1,15 +1,21 @@
 package com.example
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.example.model.Meeting
 import com.example.model.MemberProfile
 import com.example.model.Project
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class MainViewModel : ViewModel() {
+
+    private val db: FirebaseFirestore? = try { FirebaseFirestore.getInstance() } catch (e: Exception) { null }
+    private val auth: FirebaseAuth? = try { FirebaseAuth.getInstance() } catch (e: Exception) { null }
 
     private val _profileState = MutableStateFlow(MemberProfile())
     val profileState: StateFlow<MemberProfile> = _profileState.asStateFlow()
@@ -22,6 +28,32 @@ class MainViewModel : ViewModel() {
 
     init {
         loadMockData()
+        loadUserProfile()
+    }
+
+    private fun loadUserProfile() {
+        val user = auth?.currentUser
+        if (user != null && db != null) {
+            db.collection("users").document(user.uid).get()
+                .addOnSuccessListener { document ->
+                    if (document != null && document.exists()) {
+                        val profile = document.toObject(MemberProfile::class.java)
+                        if (profile != null) {
+                            _profileState.value = profile
+                        }
+                    } else {
+                        // Create default profile with name and email from Google
+                        val newProfile = MemberProfile(
+                            name = user.displayName ?: "",
+                            email = user.email ?: ""
+                        )
+                        _profileState.value = newProfile
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.w("MainViewModel", "Error reading user profile", e)
+                }
+        }
     }
 
     private fun loadMockData() {
@@ -39,5 +71,15 @@ class MainViewModel : ViewModel() {
 
     fun updateProfile(newProfile: MemberProfile) {
         _profileState.update { newProfile }
+        val user = auth?.currentUser
+        if (user != null && db != null) {
+            db.collection("users").document(user.uid).set(newProfile)
+                .addOnSuccessListener {
+                    Log.d("MainViewModel", "Profile updated in Firestore")
+                }
+                .addOnFailureListener { e ->
+                    Log.w("MainViewModel", "Error updating profile", e)
+                }
+        }
     }
 }

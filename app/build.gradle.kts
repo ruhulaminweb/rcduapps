@@ -7,6 +7,9 @@ plugins {
   alias(libs.plugins.roborazzi)
   alias(libs.plugins.secrets)
   alias(libs.plugins.google.services)
+  id("com.google.gms.google-services") version "4.5.0" apply false
+  id("com.android.application")
+  id("com.google.gms.google-services")
 }
 
 android {
@@ -97,15 +100,15 @@ dependencies {
   implementation(libs.converter.moshi)
   implementation(libs.firebase.ai)
   // Uncomment to use Firestore:
-  // implementation(libs.firebase.firestore)
+  implementation(libs.firebase.firestore)
 
   // Firebase Auth with Google Sign-In requires all of the following to be uncommented together.
   // If you are using Firebase Auth with other providers (e.g. Email/Password), you may only need
   // firebase-auth.
-  // implementation(libs.firebase.auth)
-  // implementation(libs.androidx.credentials)
-  // implementation(libs.androidx.credentials.play.services)
-  // implementation(libs.googleid)
+  implementation(libs.firebase.auth)
+  implementation(libs.androidx.credentials)
+  implementation(libs.androidx.credentials.play.services)
+  implementation(libs.googleid)
   implementation(libs.firebase.appcheck.recaptcha)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
@@ -131,5 +134,16 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.test.manifest)
   debugImplementation(libs.androidx.compose.ui.tooling)
   "ksp"(libs.androidx.room.compiler)
+  // Import the Firebase BoM
+  implementation(platform("com.google.firebase:firebase-bom:34.16.0"))
+
+
+  // TODO: Add the dependencies for Firebase products you want to use
+  // When using the BoM, don't specify versions in Firebase dependencies
+  implementation("com.google.firebase:firebase-analytics")
+
+
+  // Add the dependencies for any other desired Firebase products
+  // https://firebase.google.com/docs/android/setup#available-libraries
   "ksp"(libs.moshi.kotlin.codegen)
 }
